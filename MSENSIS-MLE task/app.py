@@ -8,7 +8,7 @@ This application provides a web interface for classifying images of cats and dog
 using pre-trained deep learning models. It features an elegant UI with neural
 network visualization and real-time inference.
 
-Author: Interview Candidate
+Author: Kalpazidis Alexandros
 Date: January 2026
 """
 
@@ -59,7 +59,7 @@ st.markdown("""
     
     .block-container {
         padding: 1rem 2rem 2rem 2rem !important;
-        max-width: 1400px !important;
+        max-width: 1600px !important;
     }
     
     * {
@@ -478,21 +478,28 @@ def generate_vit_architecture_html(predictions: dict = None, image_b64: str = No
 
 def generate_mobilevit_architecture_html(predictions: dict = None, image_b64: str = None) -> str:
     """
-    Generate MobileViTv3 architecture visualization.
+    Generate MobileViTv3-S architecture visualization based on the paper diagram.
+    
+    Architecture flow:
+    Input → Conv3×3↓2 → MV2 → MV2↓2 → 2×MV2 → MV2↓2+MobileViT(L=2) → 
+    MV2↓2+MobileViT(L=4) → MV2↓2+MobileViT(L=3) → Conv1×1 → GlobalPool → Linear → Classes
     
     Args:
-        predictions: Classification scores
+        predictions: Classification scores {'Cat': x, 'Dog': y}
         image_b64: Base64 encoded image for input preview
     """
     
-    width = 700
+    width = 850
     height = 420
     
     cat_score = predictions.get('Cat', 0) if predictions else 0
     dog_score = predictions.get('Dog', 0) if predictions else 0
     
-    c_conv = "#06B6D4"   # Cyan for conv
-    c_mv = "#8B5CF6"     # Purple for MobileViT blocks
+    # Colors matching the diagram
+    c_conv = "#F97316"       # Orange/Coral for Conv layers
+    c_mv2 = "#84CC16"        # Light green for MV2 (InvertedResidual)
+    c_mvit = "#EC4899"       # Pink/Magenta for MobileViT blocks
+    c_pool = "#FDE047"       # Yellow for Global pool + Linear
     c_cat = "#F97316"
     c_dog = "#3B82F6"
     
@@ -500,30 +507,30 @@ def generate_mobilevit_architecture_html(predictions: dict = None, image_b64: st
     if image_b64:
         input_image_section = f'''
             <defs>
-                <clipPath id="imgClip2">
-                    <rect x="37" y="142" width="66" height="66" rx="4"/>
+                <clipPath id="imgClipMV">
+                    <rect x="17" y="167" width="56" height="56" rx="4"/>
                 </clipPath>
             </defs>
-            <rect x="35" y="140" width="70" height="70" fill="#1a1a1a" stroke="#22c55e" stroke-width="2" rx="6"/>
-            <image x="37" y="142" width="66" height="66" 
+            <rect x="15" y="165" width="60" height="60" fill="#1a1a1a" stroke="#22c55e" stroke-width="2" rx="6"/>
+            <image x="17" y="167" width="56" height="56" 
                    href="{image_b64}" 
                    preserveAspectRatio="xMidYMid slice"
-                   clip-path="url(#imgClip2)"/>
+                   clip-path="url(#imgClipMV)"/>
         '''
     else:
         input_image_section = '''
-            <rect x="35" y="140" width="70" height="70" fill="#1a1a1a" stroke="#333" rx="6"/>
-            <text x="70" y="175" fill="#444" font-size="20" font-family="Inter" text-anchor="middle">?</text>
+            <rect x="15" y="165" width="60" height="60" fill="#1a1a1a" stroke="#333" rx="6"/>
+            <text x="45" y="200" fill="#444" font-size="18" font-family="Inter" text-anchor="middle">?</text>
         '''
     
     svg = f'''
     <svg width="{width}" height="{height}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
         <defs>
-            <filter id="shadow2" x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+            <filter id="shadowMV" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
             </filter>
-            <marker id="arrow2" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="#444"/>
+            <marker id="arrowMV" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#444"/>
             </marker>
         </defs>
         
@@ -535,48 +542,228 @@ def generate_mobilevit_architecture_html(predictions: dict = None, image_b64: st
         <text x="{width/2}" y="28" fill="#fff" font-size="15" font-family="Inter, sans-serif" 
               text-anchor="middle" font-weight="600">MobileViTv3-S Architecture</text>
         <text x="{width/2}" y="46" fill="#666" font-size="11" font-family="Inter, sans-serif" 
-              text-anchor="middle">Lightweight Vision Transformer for Mobile Devices</text>
+              text-anchor="middle">Lightweight Hybrid CNN-Transformer for Mobile Devices</text>
         
-        <!-- Input Image -->
+        <!-- ============================================================ -->
+        <!-- INPUT IMAGE                                                   -->
+        <!-- ============================================================ -->
+        
         {input_image_section}
-        <text x="70" y="230" fill="#888" font-size="10" font-family="Inter" text-anchor="middle">Input</text>
-        <text x="70" y="243" fill="#666" font-size="9" font-family="Inter" text-anchor="middle">256 × 256</text>
+        <text x="45" y="245" fill="#888" font-size="9" font-family="Inter" text-anchor="middle">Input</text>
+        
+        <!-- Arrow to Conv -->
+        <line x1="80" y1="195" x2="98" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
+        
+        <!-- ============================================================ -->
+        <!-- CONV 3×3 ↓2                                                   -->
+        <!-- ============================================================ -->
+        
+        <rect x="102" y="170" width="38" height="50" fill="{c_conv}" rx="4" filter="url(#shadowMV)"/>
+        <text x="121" y="190" fill="#fff" font-size="8" font-family="Inter" text-anchor="middle" font-weight="600">Conv</text>
+        <text x="121" y="200" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle">3×3</text>
+        <text x="121" y="212" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle" opacity="0.8">↓2</text>
+        <text x="121" y="235" fill="#666" font-size="7" font-family="Inter" text-anchor="middle">128×128</text>
         
         <!-- Arrow -->
-        <line x1="110" y1="175" x2="140" y2="175" stroke="#444" stroke-width="1.5" marker-end="url(#arrow2)"/>
+        <line x1="145" y1="195" x2="163" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
         
-        <!-- Architecture blocks placeholder -->
-        <rect x="145" y="120" width="400" height="180" fill="#111" stroke="#333" rx="12" stroke-dasharray="6,3"/>
+        <!-- ============================================================ -->
+        <!-- MV2 Block                                                     -->
+        <!-- ============================================================ -->
         
-        <text x="345" y="175" fill="#555" font-size="14" font-family="Inter" text-anchor="middle" font-weight="500">
-            Custom Model - To Be Trained
-        </text>
-        <text x="345" y="200" fill="#444" font-size="11" font-family="Inter" text-anchor="middle">
-            Conv Stem → MobileViT Blocks ×3 → Global Pool → Classifier
-        </text>
-        <text x="345" y="225" fill="#666" font-size="10" font-family="Inter" text-anchor="middle">
-            Efficient architecture optimized for mobile deployment
-        </text>
-        <text x="345" y="270" fill="#555" font-size="9" font-family="Inter" text-anchor="middle">
-            Parameters: 5.8M | FLOPs: ~1.8G
-        </text>
+        <rect x="167" y="175" width="32" height="40" fill="{c_mv2}" rx="4" filter="url(#shadowMV)"/>
+        <text x="183" y="192" fill="#000" font-size="8" font-family="Inter" text-anchor="middle" font-weight="600">MV2</text>
+        <text x="183" y="205" fill="#000" font-size="7" font-family="Inter" text-anchor="middle" opacity="0.7"></text>
+        <text x="183" y="235" fill="#666" font-size="7" font-family="Inter" text-anchor="middle">64×64</text>
         
-        <!-- Arrow to output -->
-        <line x1="550" y1="210" x2="580" y2="210" stroke="#444" stroke-width="1.5" marker-end="url(#arrow2)"/>
+        <!-- Arrow -->
+        <line x1="204" y1="195" x2="218" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
         
-        <!-- Output placeholder -->
-        <g transform="translate(585, 170)">
-            <rect x="0" y="0" width="90" height="80" fill="#1a1a1a" stroke="#333" rx="8"/>
-            <text x="45" y="20" fill="#888" font-size="9" font-family="Inter" text-anchor="middle">Output</text>
-            <text x="45" y="42" fill="{c_cat}" font-size="10" font-family="Inter" text-anchor="middle">Cat: --</text>
-            <text x="45" y="62" fill="{c_dog}" font-size="10" font-family="Inter" text-anchor="middle">Dog: --</text>
+        <!-- ============================================================ -->
+        <!-- MV2 ↓2 Block                                                  -->
+        <!-- ============================================================ -->
+        
+        <rect x="222" y="175" width="32" height="40" fill="{c_mv2}" rx="4" filter="url(#shadowMV)"/>
+        <text x="238" y="190" fill="#000" font-size="8" font-family="Inter" text-anchor="middle" font-weight="600">MV2</text>
+        <text x="238" y="202" fill="#000" font-size="7" font-family="Inter" text-anchor="middle" opacity="0.8">↓2</text>
+        
+        <!-- Arrow -->
+        <line x1="259" y1="195" x2="273" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
+        
+        <!-- ============================================================ -->
+        <!-- 2× MV2 Block                                                  -->
+        <!-- ============================================================ -->
+        
+        <rect x="277" y="175" width="38" height="40" fill="{c_mv2}" rx="4" filter="url(#shadowMV)"/>
+        <text x="296" y="185" fill="#000" font-size="7" font-family="Inter" text-anchor="middle">2×</text>
+        <text x="296" y="198" fill="#000" font-size="8" font-family="Inter" text-anchor="middle" font-weight="600">MV2</text>
+        <text x="296" y="235" fill="#666" font-size="7" font-family="Inter" text-anchor="middle">32×32</text>
+        
+        <!-- Arrow -->
+        <line x1="320" y1="195" x2="334" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
+        
+        <!-- ============================================================ -->
+        <!-- MV2↓2 + MobileViT Block (L=2)                                 -->
+        <!-- ============================================================ -->
+        
+        <g transform="translate(338, 155)">
+            <!-- MV2 ↓2 -->
+            <rect x="0" y="25" width="28" height="30" fill="{c_mv2}" rx="3"/>
+            <text x="14" y="40" fill="#000" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">MV2</text>
+            <text x="14" y="50" fill="#000" font-size="6" font-family="Inter" text-anchor="middle">↓2</text>
+            
+            <!-- MobileViT Block -->
+            <rect x="32" y="15" width="38" height="50" fill="{c_mvit}" rx="4" filter="url(#shadowMV)"/>
+            <text x="51" y="35" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">MobileViT</text>
+            <text x="51" y="47" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle">block</text>
+            
+            <!-- L label -->
+            <text x="51" y="8" fill="#888" font-size="8" font-family="Inter" text-anchor="middle" font-style="italic">L = 2</text>
+            <text x="51" y="90" fill="#666" font-size="7" font-family="Inter" text-anchor="middle">16×16</text>
+            <text x="51" y="78" fill="#666" font-size="6" font-family="Inter" text-anchor="middle">h=w=2</text>
         </g>
         
-        <!-- Status badge -->
-        <rect x="280" y="340" width="140" height="36" fill="#1a1a1a" stroke="#ef4444" rx="8" opacity="0.8"/>
-        <text x="{width/2}" y="363" fill="#ef4444" font-size="11" font-family="Inter" text-anchor="middle" font-weight="500">
-            Not Yet Available
-        </text>
+        <!-- Arrow -->
+        <line x1="413" y1="195" x2="427" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
+        
+        <!-- ============================================================ -->
+        <!-- MV2↓2 + MobileViT Block (L=4)                                 -->
+        <!-- ============================================================ -->
+        
+        <g transform="translate(431, 155)">
+            <!-- MV2 ↓2 -->
+            <rect x="0" y="25" width="28" height="30" fill="{c_mv2}" rx="3"/>
+            <text x="14" y="40" fill="#000" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">MV2</text>
+            <text x="14" y="50" fill="#000" font-size="6" font-family="Inter" text-anchor="middle">↓2</text>
+            
+            <!-- MobileViT Block -->
+            <rect x="32" y="15" width="38" height="50" fill="{c_mvit}" rx="4" filter="url(#shadowMV)"/>
+            <text x="51" y="35" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">MobileViT</text>
+            <text x="51" y="47" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle">block</text>
+            
+            <!-- L label -->
+            <text x="51" y="8" fill="#888" font-size="8" font-family="Inter" text-anchor="middle" font-style="italic">L = 4</text>
+            <text x="51" y="90" fill="#666" font-size="7" font-family="Inter" text-anchor="middle">8×8</text>
+            <text x="51" y="78" fill="#666" font-size="6" font-family="Inter" text-anchor="middle">h=w=2</text>
+        </g>
+        
+        <!-- Arrow -->
+        <line x1="506" y1="195" x2="520" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
+        
+        <!-- ============================================================ -->
+        <!-- MV2↓2 + MobileViT Block (L=3)                                 -->
+        <!-- ============================================================ -->
+        
+        <g transform="translate(524, 155)">
+            <!-- MV2 ↓2 -->
+            <rect x="0" y="25" width="28" height="30" fill="{c_mv2}" rx="3"/>
+            <text x="14" y="40" fill="#000" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">MV2</text>
+            <text x="14" y="50" fill="#000" font-size="6" font-family="Inter" text-anchor="middle">↓2</text>
+            
+            <!-- MobileViT Block -->
+            <rect x="32" y="15" width="38" height="50" fill="{c_mvit}" rx="4" filter="url(#shadowMV)"/>
+            <text x="51" y="35" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">MobileViT</text>
+            <text x="51" y="47" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle">block</text>
+            
+            <!-- L label -->
+            <text x="51" y="8" fill="#888" font-size="8" font-family="Inter" text-anchor="middle" font-style="italic">L = 3</text>
+            <text x="51" y="90" fill="#666" font-size="7" font-family="Inter" text-anchor="middle">8×8</text>
+            <text x="51" y="78" fill="#666" font-size="6" font-family="Inter" text-anchor="middle">h=w=2</text>
+        </g>
+        
+        <!-- Arrow -->
+        <line x1="599" y1="195" x2="613" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
+        
+        <!-- ============================================================ -->
+        <!-- Conv 1×1                                                      -->
+        <!-- ============================================================ -->
+        
+        <rect x="617" y="175" width="32" height="40" fill="{c_conv}" rx="4" filter="url(#shadowMV)"/>
+        <text x="633" y="190" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">Conv</text>
+        <text x="633" y="202" fill="#fff" font-size="7" font-family="Inter" text-anchor="middle">1×1</text>
+        
+        <!-- Arrow -->
+        <line x1="654" y1="195" x2="668" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
+        
+        <!-- ============================================================ -->
+        <!-- Global Pool + Linear                                          -->
+        <!-- ============================================================ -->
+        
+        <rect x="672" y="165" width="55" height="60" fill="{c_pool}" rx="4" filter="url(#shadowMV)"/>
+        <text x="700" y="185" fill="#000" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">Global pool</text>
+        <text x="700" y="198" fill="#000" font-size="8" font-family="Inter" text-anchor="middle">→</text>
+        <text x="700" y="212" fill="#000" font-size="7" font-family="Inter" text-anchor="middle" font-weight="600">Linear</text>
+        <text x="700" y="245" fill="#666" font-size="7" font-family="Inter" text-anchor="middle">1×1</text>
+        
+        <!-- Arrow -->
+        <line x1="732" y1="195" x2="746" y2="195" stroke="#444" stroke-width="1.5" marker-end="url(#arrowMV)"/>
+        
+        <!-- ============================================================ -->
+        <!-- OUTPUT CLASSES                                                -->
+        <!-- ============================================================ -->
+        
+        <g transform="translate(750, 160)">
+            <rect x="0" y="0" width="80" height="70" fill="#1a1a1a" stroke="#333" rx="6"/>
+            <text x="40" y="17" fill="#888" font-size="8" font-family="Inter" text-anchor="middle" 
+                  letter-spacing="0.5" font-weight="500">Classes</text>
+            
+            <!-- Cat output -->
+            <rect x="8" y="24" width="64" height="18" fill="#111" rx="3"/>
+            <text x="16" y="37" fill="{c_cat}" font-size="9" font-family="Inter" font-weight="500">Cat</text>
+            <text x="64" y="37" fill="{c_cat}" font-size="9" font-family="monospace" 
+                  text-anchor="end" font-weight="600">{cat_score:.1%}</text>
+            
+            <!-- Dog output -->
+            <rect x="8" y="46" width="64" height="18" fill="#111" rx="3"/>
+            <text x="16" y="59" fill="{c_dog}" font-size="9" font-family="Inter" font-weight="500">Dog</text>
+            <text x="64" y="59" fill="{c_dog}" font-size="9" font-family="monospace" 
+                  text-anchor="end" font-weight="600">{dog_score:.1%}</text>
+        </g>
+        
+        <!-- ============================================================ -->
+        <!-- LEGEND                                                        -->
+        <!-- ============================================================ -->
+        
+        <g transform="translate(60, 290)">
+            <text x="0" y="0" fill="#666" font-size="9" font-family="Inter" font-weight="500">Legend:</text>
+            
+            <!-- Conv -->
+            <rect x="55" y="-10" width="16" height="12" fill="{c_conv}" rx="2"/>
+            <text x="76" y="0" fill="#888" font-size="8" font-family="Inter">Conv</text>
+            
+            <!-- MV2 -->
+            <rect x="120" y="-10" width="16" height="12" fill="{c_mv2}" rx="2"/>
+            <text x="141" y="0" fill="#888" font-size="8" font-family="Inter">MV2 (InvertedResidual)</text>
+            
+            <!-- MobileViT -->
+            <rect x="265" y="-10" width="16" height="12" fill="{c_mvit}" rx="2"/>
+            <text x="286" y="0" fill="#888" font-size="8" font-family="Inter">MobileViT Block</text>
+            
+            <!-- Pool -->
+            <rect x="390" y="-10" width="16" height="12" fill="{c_pool}" rx="2"/>
+            <text x="411" y="0" fill="#888" font-size="8" font-family="Inter">Global Pool + Linear</text>
+        </g>
+        
+        <!-- ============================================================ -->
+        <!-- Output Spatial Dimensions Label                               -->
+        <!-- ============================================================ -->
+        
+        <text x="45" y="260" fill="#555" font-size="8" font-family="Inter" text-anchor="middle">256×256</text>
+        
+        <!-- ============================================================ -->
+        <!-- Architecture Info                                             -->
+        <!-- ============================================================ -->
+        
+        <text x="200" y="380" fill="#555" font-size="9" font-family="Inter" text-anchor="middle">Parameters: 5.8M</text>
+        <text x="425" y="380" fill="#555" font-size="9" font-family="Inter" text-anchor="middle">MACs: 1.84G</text>
+        <text x="650" y="380" fill="#555" font-size="9" font-family="Inter" text-anchor="middle">Input: 256×256</text>
+        
+        <!-- ============================================================ -->
+        <!-- Data Flow Label                                               -->
+        <!-- ============================================================ -->
+        
+        <text x="{width/2}" y="{height - 15}" fill="#444" font-size="9" font-family="Inter" 
+              text-anchor="middle">← Data Flow: Image → Features → Classification →</text>
         
     </svg>
     '''
@@ -595,7 +782,13 @@ def generate_mobilevit_architecture_html(predictions: dict = None, image_b64: st
 
 
 def generate_results_html(predictions: dict = None, predicted_class: str = None) -> str:
-    """Generate HTML for results display."""
+    """
+    Generate HTML for results display.
+    
+    Args:
+        predictions: Classification scores {'Cat': x, 'Dog': y}
+        predicted_class: The predicted class label
+    """
     
     if predictions is None:
         return '''
@@ -604,15 +797,16 @@ def generate_results_html(predictions: dict = None, predicted_class: str = None)
         <head>
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                html { height: 100%; background: transparent; }
                 body {
-                    margin: 0; padding: 0;
+                    height: 100%;
                     background: #0a0a0a;
                     font-family: 'Inter', sans-serif;
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
                     align-items: center;
-                    min-height: 280px;
                     color: #555;
                     border: 1px solid #222;
                     border-radius: 16px;
@@ -642,13 +836,15 @@ def generate_results_html(predictions: dict = None, predicted_class: str = None)
     <head>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+            html {{ height: 100%; background: transparent; }}
             body {{
-                margin: 0; padding: 24px;
+                height: 100%;
+                padding: 24px;
                 background: #0a0a0a;
                 font-family: 'Inter', sans-serif;
                 border: 1px solid #222;
                 border-radius: 16px;
-                box-sizing: border-box;
             }}
             .title {{
                 font-size: 11px;
@@ -740,11 +936,11 @@ def main():
     # Streamlit can briefly re-render widgets on the first interaction (e.g., first upload),
     # especially when cache_resource objects are initialized for the first time.
     #
-    # You observed that the brief “duplicate uploader” flicker disappears after switching
+    # There was brief “duplicate uploader” flicker that disappears after switching
     # model once and switching back. We reproduce that behavior automatically ONCE on
     # first app open, before rendering any UI, so the user never notices.
-    #
-    # This is an interview-task UX workaround, not a production pattern.
+    # This is UI bug that i didnt have time to fix so that's just a UX workaround.
+
     def _silent_startup_warmup() -> None:
         if st.session_state.get("_warmup_done", False):
             return
@@ -798,7 +994,7 @@ def main():
         key="model_selector"
     )
     
-    selected_model = 'vit' if "ViT" in model_choice else 'mobilevit'
+    selected_model = 'vit' if model_choice == "Pre-trained ViT" else 'mobilevit'
     
     # Load model
     model = load_model(selected_model)
@@ -813,7 +1009,8 @@ def main():
     # =========================================================================
     # Main Three-Column Layout
     # =========================================================================
-    col_left, col_center, col_right = st.columns([1, 2.5, 1])
+    # Wider center column to accommodate MobileViT architecture (850px)
+    col_left, col_center, col_right = st.columns([1, 3.5, 1])
     
     # -------------------------------------------------------------------------
     # LEFT: Input Image
@@ -851,14 +1048,20 @@ def main():
         # Generate architecture visualization based on selected model
         if selected_model == 'vit':
             network_html = generate_vit_architecture_html(predictions, image_b64)
+            network_height = 440
         else:
             network_html = generate_mobilevit_architecture_html(predictions, image_b64)
+            network_height = 440
         
-        components.html(network_html, height=440)
+        components.html(network_html, height=network_height)
         
         # Status badge
-        status = "Ready" if selected_model == 'vit' else "Model Not Available"
-        status_color = "#22c55e" if selected_model == 'vit' else "#ef4444"
+        if selected_model == 'vit':
+            status = "Ready"
+            status_color = "#22c55e"
+        else:
+            status = "Training in Progress" if not model.is_model_loaded() else "Ready"
+            status_color = "#f59e0b" if not model.is_model_loaded() else "#22c55e"
         st.markdown(f'''
             <div style="text-align: center; margin-top: 0.5rem;">
                 <span style="display: inline-flex; align-items: center; gap: 8px; 
@@ -874,10 +1077,13 @@ def main():
     # RIGHT: Results
     # -------------------------------------------------------------------------
     with col_right:
+        # Add vertical spacing to center results with network (network ~440px, results ~230px)
+        # Offset = (440 - 230) / 2 ≈ 105px, plus ~25px for section title = ~80px
+        st.markdown('<div style="height: 80px;"></div>', unsafe_allow_html=True)
         st.markdown('<p class="section-title">Classification Results</p>', unsafe_allow_html=True)
         
         results_html = generate_results_html(predictions, predicted_class)
-        components.html(results_html, height=300)
+        components.html(results_html, height=230)
 
 
 # =============================================================================

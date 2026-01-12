@@ -8,12 +8,11 @@ Available Models:
     1. ViT (Vision Transformer) - Pre-trained from HuggingFace
        Source: nateraw/vit-base-cats-vs-dogs
        
-    2. MobileViTv3 - Custom trained model (to be added)
-       Source: Fine-tuned on provided dataset
+    2. MobileViTv3 - Custom trained model
+       Source: Trained on provided dataset
 """
 
 from .inference import ModelInference
 from .network_viz import NetworkVisualizer
 
 __all__ = ['ModelInference', 'NetworkVisualizer']
-

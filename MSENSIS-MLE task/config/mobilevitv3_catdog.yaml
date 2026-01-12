@@ -1,0 +1,110 @@
+# =============================================================================
+# MobileViTv3-S Training Config for Cats vs Dogs Classification
+# =============================================================================
+# Based on: MobileViTv3 small configuration
+# Dataset: Custom Cats vs Dogs (24,288 images, 80/10/10 split)
+# Classes: 2 (cat, dog)
+# Epochs: 300
+# =============================================================================
+
+common:
+  run_label: "mobilevitv3_catdog"
+  log_freq: 100
+  auto_resume: true
+  mixed_precision: true
+  
+dataset:
+  # Paths to the prepared dataset (ImageNet-style folder structure)
+  root_train: "C:/Users/kalpa/Desktop/mSensis_final/prepared_dataset/train"
+  root_val: "C:/Users/kalpa/Desktop/mSensis_final/prepared_dataset/val"
+  name: "imagenet"  # Use imagenet loader for folder-based dataset
+  category: "classification"
+  train_batch_size0: 32  # Adjust based on GPU memory
+  val_batch_size0: 32
+  eval_batch_size0: 1
+  workers: 2  # Reduced for Windows stability
+  persistent_workers: false
+  pin_memory: true
+  
+image_augmentation:
+  random_resized_crop:
+    enable: true
+    interpolation: "bilinear"
+  random_horizontal_flip:
+    enable: true
+  # Color augmentations for better generalization
+  random_color_jitter:
+    enable: true
+    brightness: 0.2
+    contrast: 0.2
+    saturation: 0.2
+    hue: 0.1
+
+sampler:
+  name: "batch_sampler"
+  bs:
+    crop_size_width: 256
+    crop_size_height: 256
+
+loss:
+  category: "classification"
+  classification:
+    name: "label_smoothing"
+    label_smoothing_factor: 0.1
+
+optim:
+  name: "adamw"
+  weight_decay: 0.01
+  no_decay_bn_filter_bias: false
+  adamw:
+    beta1: 0.9
+    beta2: 0.999
+
+scheduler:
+  name: "cosine"
+  is_iteration_based: false
+  max_epochs: 300
+  warmup_iterations: 500  # Reduced for smaller dataset
+  warmup_init_lr: 0.0001
+  cosine:
+    max_lr: 0.001  # Reduced for fine-tuning/smaller dataset
+    min_lr: 0.00001
+
+model:
+  classification:
+    name: "mobilevit_v3"
+    n_classes: 2  # Cat and Dog
+    classifier_dropout: 0.2  # Increased for smaller dataset
+    mit:
+      mode: "small_v3"
+      ffn_dropout: 0.0
+      attn_dropout: 0.0
+      dropout: 0.1
+      number_heads: 4
+      no_fuse_local_global_features: false
+      conv_kernel_size: 3
+    activation:
+      name: "swish"
+  normalization:
+    name: "batch_norm_2d"
+    momentum: 0.1
+  activation:
+    name: "swish"
+  layer:
+    global_pool: "mean"
+    conv_init: "kaiming_normal"
+    linear_init: "trunc_normal"
+    linear_init_std_dev: 0.02
+
+ema:
+  enable: true
+  momentum: 0.0005
+
+# Disable DDP for single GPU training
+ddp:
+  enable: false
+
+stats:
+  name: ["loss", "top1"]  # Only top1 for binary classification
+  checkpoint_metric: "top1"
+  checkpoint_metric_max: true

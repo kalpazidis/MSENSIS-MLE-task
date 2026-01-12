@@ -7,7 +7,7 @@ This module provides SVG-based neural network architecture visualization.
 It generates interactive visual representations of the neural network
 architectures used in the classification task.
 
-Author: Interview Candidate
+Author: Kalpazidis Alexandros
 Date: January 2026
 """
 
@@ -349,4 +349,3 @@ class NetworkVisualizer:
             }
             for layer in self.architecture['layers']
         ]
-
