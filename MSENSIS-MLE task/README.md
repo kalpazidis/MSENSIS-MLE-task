@@ -51,8 +51,10 @@ This project implements a complete ML pipeline for binary image classification (
 
 ## 🛠️Activating the enviroment
 
-   1. **Windows (PowerShell/CMD)**
-      .\venv\Scripts\activate
+    ```bash
+    # Windows
+    .\venv\Scripts\activate
+    ```
 
 
 ## 🚀 Running the Application
@@ -99,7 +101,7 @@ The application will open in your default browser at `http://localhost:8501`
 - **Parameters**: ~86M
 - **Fine-tuned on**: Cats vs Dogs dataset
 
-### Custom Model: MobileViTv3-S (Placeholder)
+### Custom Model: MobileViTv3-S
 
 - **Source**: [MobileViTv3](https://github.com/micronDLA/MobileViTv3)
 - **Variant**: Small (S)
